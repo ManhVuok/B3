@@ -1,0 +1,444 @@
+openapi: 3.0.3
+info:
+  title: Access Gate Service - Product B (Nhóm B3)
+  version: 1.0.0
+  description: |
+    Service kiểm soát ra/vào campus bằng RFID / mã sinh viên.
+    Smart Campus Operations Platform - FIT4110.
+
+servers:
+  - url: http://localhost:3003
+    description: Local development
+  - url: http://access-gate-b3:3003
+    description: Docker network Product B
+
+security:
+  - ApiKeyAuth: []
+
+tags:
+  - name: System
+  - name: Access
+  - name: Cards
+
+paths:
+  /health:
+    get:
+      tags: [System]
+      summary: Health check
+      operationId: healthCheck
+      responses:
+        "200":
+          description: Service healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+
+  /api/v1/access/check:
+    post:
+      tags: [Access]
+      summary: Kiểm tra quyền ra/vào khi quẹt thẻ
+      operationId: accessCheck
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AccessCheckRequest"
+            examples:
+              validStudentIn:
+                summary: Sinh viên hợp lệ - vào cổng
+                value:
+                  card_id: RFID-2026-001
+                  gate_id: gate-main
+                  direction: IN
+                  timestamp: "2026-05-02T07:30:00"
+      responses:
+        "200":
+          description: Kết quả kiểm tra (granted hoặc denied đều trả 200)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccessCheckResponse"
+        "400":
+          description: Dữ liệu không hợp lệ
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/v1/access/cancel:
+    post:
+      tags: [Access]
+      summary: Hủy kết quả quẹt thẻ do timeout vật lý
+      operationId: cancelAccess
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AccessCancelRequest"
+      responses:
+        "200":
+          description: Hủy thành công
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccessCancelResponse"
+        "404":
+          description: Không tìm thấy event
+
+  /api/v1/access/logs:
+    get:
+      tags: [Access]
+      summary: Xem lịch sử ra/vào
+      operationId: listAccessLogs
+      parameters:
+        - name: gate_id
+          in: query
+          schema:
+            type: string
+        - name: direction
+          in: query
+          schema:
+            type: string
+            enum: [IN, OUT]
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        "200":
+          description: Danh sách log
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccessLogListResponse"
+
+  /api/v1/access/logs/recent:
+    get:
+      tags: [Access]
+      summary: Xem lịch sử ra/vào (Cursor Pagination - Contract B6)
+      operationId: listAccessLogsCursor
+      parameters:
+        - name: cursor
+          in: query
+          schema:
+            type: string
+          description: Base64 encoded event_id
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
+      responses:
+        "200":
+          description: Danh sách log với cursor
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CursorAccessLogListResponse"
+        "429":
+          description: Too Many Requests (Rate Limit)
+
+  /api/v1/cards/{card_id}:
+    get:
+      tags: [Cards]
+      summary: Tra cứu thông tin thẻ
+      operationId: getCard
+      parameters:
+        - name: card_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Thông tin thẻ
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CardResponse"
+        "404":
+          description: Không tìm thấy thẻ
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/v1/cards:
+    post:
+      tags: [Cards]
+      summary: Tạo thẻ mới (seed/demo)
+      operationId: createCard
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CardCreateRequest"
+      responses:
+        "201":
+          description: Tạo thành công
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CardResponse"
+        "400":
+          description: Thẻ đã tồn tại
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+  schemas:
+    HealthResponse:
+      type: object
+      required: [status, service, product, timestamp]
+      properties:
+        status:
+          type: string
+          example: ok
+        service:
+          type: string
+          example: access-gate-b3
+        product:
+          type: string
+          example: product-b
+        timestamp:
+          type: string
+          format: date-time
+
+    AccessCheckRequest:
+      type: object
+      required: [card_id, gate_id, direction, timestamp]
+      properties:
+        card_id:
+          type: string
+          example: RFID-2026-001
+        gate_id:
+          type: string
+          example: gate-main
+        direction:
+          type: string
+          enum: [IN, OUT]
+        timestamp:
+          type: string
+          format: date-time
+
+    AccessCheckResponse:
+      type: object
+      required:
+        - access_granted
+        - reason
+        - gate_id
+        - direction
+        - event_id
+        - checked_at
+      properties:
+        access_granted:
+          type: boolean
+        reason:
+          type: string
+        person_id:
+          type: string
+          nullable: true
+        person_name:
+          type: string
+          nullable: true
+        person_type:
+          type: string
+          nullable: true
+          enum: [student, staff, guest]
+        gate_id:
+          type: string
+        direction:
+          type: string
+          enum: [IN, OUT]
+        event_id:
+          type: string
+        checked_at:
+          type: string
+          format: date-time
+
+    AccessCancelRequest:
+      type: object
+      required: [event_id, reason]
+      properties:
+        event_id:
+          type: string
+        reason:
+          type: string
+          example: PHYSICAL_TIMEOUT_NO_PASSAGE
+          
+    AccessCancelResponse:
+      type: object
+      required: [event_id, status, message]
+      properties:
+        event_id:
+          type: string
+        status:
+          type: string
+        message:
+          type: string
+
+    AccessLogItem:
+      type: object
+      properties:
+        event_id:
+          type: string
+        card_id:
+          type: string
+        person_id:
+          type: string
+          nullable: true
+        person_name:
+          type: string
+          nullable: true
+        person_type:
+          type: string
+          nullable: true
+        gate_id:
+          type: string
+        direction:
+          type: string
+        access_granted:
+          type: boolean
+        reason:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        status:
+          type: string
+
+    AccessLogListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/AccessLogItem"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+
+    CursorAccessLogListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/AccessLogItem"
+        next_cursor:
+          type: string
+          nullable: true
+        has_more:
+          type: boolean
+
+    CardCreateRequest:
+      type: object
+      required: [card_id, person_id, person_name]
+      properties:
+        card_id:
+          type: string
+        person_id:
+          type: string
+        person_name:
+          type: string
+        person_type:
+          type: string
+          enum: [student, staff, guest]
+          default: student
+        status:
+          type: string
+          enum: [active, expired, blocked]
+          default: active
+
+    CardResponse:
+      type: object
+      properties:
+        card_id:
+          type: string
+        person_id:
+          type: string
+        person_name:
+          type: string
+        person_type:
+          type: string
+        status:
+          type: string
+        expired_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    ErrorDetail:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        details:
+          type: array
+          items:
+            type: string
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          $ref: "#/components/schemas/ErrorDetail"
+
+  examples:
+    CoreBusinessAccessEvent:
+      summary: Payload B3 gửi sang Core Business (B6)
+      value:
+        event_id: acc-20260502-0001
+        card_id: RFID-2026-001
+        person_id: SV001
+        person_name: Nguyen Van A
+        person_type: student
+        gate_id: gate-main
+        direction: IN
+        access_granted: true
+        reason: Valid student card
+        timestamp: "2026-05-02T07:30:00"
+        source_service: access-gate-b3
+        product: product-b
+
+    AnalyticsAccessEvent:
+      summary: Payload B3 gửi sang Analytics (B5)
+      value:
+        event_id: acc-20260502-0001
+        gate_id: gate-main
+        direction: IN
+        access_granted: true
+        person_type: student
+        timestamp: "2026-05-02T07:30:00"
+        source_service: access-gate-b3
+        product: product-b

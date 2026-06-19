@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trạm Kiểm Soát B3 - Bảng Điều Khiển</title>
+    <!-- Sử dụng Plus Jakarta Sans mang lại cảm giác công nghệ, hiện đại -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Palette màu sắc cực kỳ tinh tế và sâu */
+            --bg-base: #0B0F19;
+            --bg-surface: rgba(19, 27, 43, 0.6);
+            --bg-surface-hover: rgba(26, 38, 59, 0.8);
+            
+            --text-primary: #F8FAFC;
+            --text-secondary: #94A3B8;
+            --text-tertiary: #64748B;
+            
+            --accent-glow: rgba(56, 189, 248, 0.5);
+            --accent-primary: #38BDF8;
+            --accent-secondary: #818CF8;
+            
+            --success-glow: rgba(16, 185, 129, 0.4);
+            --success-text: #34D399;
+            --success-bg: rgba(16, 185, 129, 0.15);
+            --success-border: rgba(16, 185, 129, 0.3);
+            
+            --error-glow: rgba(244, 63, 94, 0.4);
+            --error-text: #FB7185;
+            --error-bg: rgba(244, 63, 94, 0.15);
+            --error-border: rgba(244, 63, 94, 0.3);
+
+            --in-text: #60A5FA;
+            --in-bg: rgba(96, 165, 250, 0.15);
+            --in-border: rgba(96, 165, 250, 0.3);
+
+            --out-text: #FBBF24;
+            --out-bg: rgba(251, 191, 36, 0.15);
+            --out-border: rgba(251, 191, 36, 0.3);
+            
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-base);
+            /* Nền gradient động cực đẹp */
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(56, 189, 248, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 85% 30%, rgba(129, 140, 248, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 50% 100%, rgba(16, 185, 129, 0.05) 0%, transparent 50%);
+            background-attachment: fixed;
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Hoạt ảnh nền lấp lánh nhẹ nhàng */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: url('data:image/svg+xml;utf8,<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"><filter id="noiseFilter"><feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(%23noiseFilter)"/></svg>');
+            opacity: 0.015;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 50px 24px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* HEADER */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 48px;
+            animation: slideDown 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .title-section h1 {
+            margin: 0 0 8px 0;
+            font-size: 3rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            background: linear-gradient(135deg, #FFFFFF 0%, #E2E8F0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 40px rgba(255,255,255,0.1);
+        }
+
+        .title-section h1 span {
+            background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .title-section p {
+            margin: 0;
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            font-weight: 400;
+        }
+
+        .status-badge {
+            background: var(--success-bg);
+            color: var(--success-text);
+            padding: 10px 20px;
+            border-radius: 100px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border: 1px solid var(--success-border);
+            box-shadow: 0 0 20px var(--success-glow);
+            backdrop-filter: blur(8px);
+            transition: all 0.3s ease;
+        }
+
+        .status-badge:hover {
+            box-shadow: 0 0 30px var(--success-glow);
+            transform: translateY(-2px);
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            background: var(--success-text);
+            border-radius: 50%;
+            position: relative;
+        }
+
+        .status-dot::after {
+            content: '';
+            position: absolute;
+            top: -4px;
+            left: -4px;
+            right: -4px;
+            bottom: -4px;
+            background: var(--success-text);
+            border-radius: 50%;
+            animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+        }
+
+        @keyframes pulse-ring {
+            0% { transform: scale(0.5); opacity: 0.8; }
+            100% { transform: scale(2.5); opacity: 0; }
+        }
+
+        /* MAIN PANEL */
+        .glass-panel {
+            background: var(--bg-surface);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 28px;
+            padding: 32px 40px;
+            box-shadow: var(--glass-shadow);
+            animation: fadeIn 1s ease-out forwards;
+            animation-delay: 0.2s;
+            opacity: 0;
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .panel-header h2 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .panel-header h2::before {
+            content: '';
+            display: block;
+            width: 4px;
+            height: 24px;
+            background: linear-gradient(to bottom, var(--accent-primary), var(--accent-secondary));
+            border-radius: 4px;
+        }
+
+        .update-indicator {
+            font-size: 0.9rem;
+            color: var(--text-tertiary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .update-spinner {
+            width: 14px;
+            height: 14px;
+            border: 2px solid var(--text-tertiary);
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        /* TABLE */
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 12px;
+        }
+
+        th {
+            text-align: left;
+            padding: 0 20px 12px;
+            color: var(--text-secondary);
+            font-weight: 500;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        td {
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.02);
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 0.95rem;
+            border-top: 1px solid transparent;
+            border-bottom: 1px solid transparent;
+        }
+
+        tr:hover td {
+            background: var(--bg-surface-hover);
+            transform: scale(1.005);
+            border-top: 1px solid rgba(255,255,255,0.05);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            cursor: default;
+        }
+
+        td:first-child {
+            border-top-left-radius: 16px;
+            border-bottom-left-radius: 16px;
+            border-left: 1px solid transparent;
+        }
+
+        td:last-child {
+            border-top-right-radius: 16px;
+            border-bottom-right-radius: 16px;
+            border-right: 1px solid transparent;
+        }
+
+        tr:hover td:first-child { border-left: 1px solid rgba(255,255,255,0.05); }
+        tr:hover td:last-child { border-right: 1px solid rgba(255,255,255,0.05); }
+
+        /* TAGS */
+        .tag {
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            letter-spacing: 0.03em;
+            transition: all 0.2s ease;
+        }
+
+        .tag.granted {
+            background: var(--success-bg);
+            color: var(--success-text);
+            border: 1px solid var(--success-border);
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.1);
+        }
+
+        .tag.denied {
+            background: var(--error-bg);
+            color: var(--error-text);
+            border: 1px solid var(--error-border);
+            box-shadow: 0 0 10px rgba(244, 63, 94, 0.1);
+        }
+        
+        .tag.in {
+            background: var(--in-bg);
+            color: var(--in-text);
+            border: 1px solid var(--in-border);
+        }
+        
+        .tag.out {
+            background: var(--out-bg);
+            color: var(--out-text);
+            border: 1px solid var(--out-border);
+        }
+
+        .uid-text {
+            font-family: 'JetBrains Mono', Consolas, monospace;
+            color: var(--accent-primary);
+            font-weight: 600;
+            letter-spacing: 1px;
+            background: rgba(56, 189, 248, 0.1);
+            padding: 4px 10px;
+            border-radius: 6px;
+            border: 1px solid rgba(56, 189, 248, 0.2);
+        }
+
+        .gate-text {
+            color: var(--text-primary);
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .gate-text::before {
+            content: '🚪';
+            font-size: 1.1em;
+            opacity: 0.8;
+        }
+
+        .reason-text {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            font-style: italic;
+        }
+
+        /* Time formatting */
+        .time-main {
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 1.05rem;
+            display: block;
+        }
+        .time-sub {
+            color: var(--text-tertiary);
+            font-size: 0.8rem;
+            display: block;
+            margin-top: 2px;
+        }
+
+        /* LOADING */
+        .loader-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 60px 0;
+            gap: 16px;
+        }
+
+        .loader {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(255,255,255,0.1);
+            border-top-color: var(--accent-primary);
+            border-right-color: var(--accent-secondary);
+            border-radius: 50%;
+            animation: spin 1s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
+        }
+
+        /* ANIMATIONS */
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.98); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .row-enter {
+            animation: rowSlideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+        }
+
+        @keyframes rowSlideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 60px 0;
+            color: var(--text-tertiary);
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <div class="title-section">
+            <h1>Trạm Kiểm Soát <span>B3</span></h1>
+            <p>Hệ Thống Giám Sát Ra Vào Thời Gian Thực (Smart Campus)</p>
+        </div>
+        <div class="status-badge">
+            <div class="status-dot"></div>
+            Hệ thống đang chạy
+        </div>
+    </header>
+
+    <div class="glass-panel">
+        <div class="panel-header">
+            <h2>Nhật ký quẹt thẻ gần đây</h2>
+            <div class="update-indicator">
+                <div class="update-spinner"></div>
+                Tự động cập nhật sau mỗi 5s
+            </div>
+        </div>
+        
+        <div class="table-container">
+            <table id="log-table">
+                <thead>
+                    <tr>
+                        <th>Thời gian</th>
+                        <th>Mã Thẻ (UID)</th>
+                        <th>Hướng đi</th>
+                        <th>Khu vực cổng</th>
+                        <th>Trạng thái</th>
+                        <th>Lý do hệ thống</th>
+                    </tr>
+                </thead>
+                <tbody id="log-body">
+                    <tr>
+                        <td colspan="6">
+                            <div class="loader-container">
+                                <div class="loader"></div>
+                                <span style="color: var(--text-tertiary)">Đang tải dữ liệu từ máy chủ...</span>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    const API_KEY = "DVKN2026-SECRET-KEY";
+    let previousFirstEventId = null;
+
+    function formatTime(isoString) {
+        if (!isoString.endsWith('Z') && !isoString.includes('+')) {
+            isoString += 'Z';
+        }
+        const date = new Date(isoString);
+        
+        const timeStr = date.toLocaleTimeString('vi-VN', { hour12: false, hour: '2-digit', minute:'2-digit', second:'2-digit' });
+        const dateStr = date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        
+        return `
+            <span class="time-main">${timeStr}</span>
+            <span class="time-sub">${dateStr}</span>
+        `;
+    }
+
+    // Vietsub các từ khóa
+    const dictionary = {
+        'IN': 'VÀO',
+        'OUT': 'RA',
+        'GRANTED': 'CẤP QUYỀN',
+        'DENIED': 'TỪ CHỐI',
+        'Valid student card': 'Thẻ Sinh viên hợp lệ',
+        'Valid staff card': 'Thẻ Nhân viên hợp lệ',
+        'Valid guest card': 'Thẻ Khách hợp lệ',
+        'Unknown card': 'Thẻ không tồn tại',
+        'Card blocked': 'Thẻ đã bị khóa',
+        'Card expired': 'Thẻ đã hết hạn',
+        'Card debounce - please wait': 'Quẹt quá nhanh, chờ chút'
+    };
+
+    function translate(text) {
+        if (!text) return '';
+        // Thử match chính xác
+        if (dictionary[text]) return dictionary[text];
+        // Nếu không có, trả về chuỗi gốc
+        return text;
+    }
+
+    async function fetchLogs() {
+        try {
+            const response = await fetch('/api/v1/access/logs?limit=15', {
+                headers: {
+                    'X-API-Key': API_KEY
+                }
+            });
+            const data = await response.json();
+            
+            const tbody = document.getElementById('log-body');
+            
+            if (!data.items || data.items.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state">Chưa có bản ghi quẹt thẻ nào.</div></td></tr>';
+                return;
+            }
+
+            // Kiểm tra xem có dữ liệu mới không để trigger animation
+            const currentFirstEventId = data.items[0].event_id;
+            const isNewData = previousFirstEventId !== null && previousFirstEventId !== currentFirstEventId;
+            previousFirstEventId = currentFirstEventId;
+
+            // Xóa nội dung cũ
+            tbody.innerHTML = '';
+
+            data.items.forEach((item, index) => {
+                const tr = document.createElement('tr');
+                
+                // Chỉ animate những dòng nếu đây là lần load đầu hoặc có dữ liệu mới
+                if (isNewData || index === 0 /* or handle first load differently if desired */) {
+                    tr.classList.add('row-enter');
+                    tr.style.animationDelay = `${index * 0.08}s`;
+                }
+                
+                const directionText = translate(item.direction.toUpperCase());
+                const statusText = item.access_granted ? 'CẤP QUYỀN' : 'TỪ CHỐI';
+                
+                tr.innerHTML = `
+                    <td>${formatTime(item.timestamp)}</td>
+                    <td><span class="uid-text">${item.card_id}</span></td>
+                    <td><span class="tag ${item.direction.toLowerCase()}">${directionText}</span></td>
+                    <td><span class="gate-text">${item.gate_id.toUpperCase()}</span></td>
+                    <td><span class="tag ${item.access_granted ? 'granted' : 'denied'}">${statusText}</span></td>
+                    <td><span class="reason-text">${translate(item.reason)}</span></td>
+                `;
+                tbody.appendChild(tr);
+            });
+            
+        } catch (error) {
+            console.error("Lỗi khi tải dữ liệu:", error);
+        }
+    }
+
+    // Tải dữ liệu lần đầu
+    setTimeout(fetchLogs, 500); // Đợi xíu cho animation mượt
+    
+    // Tự động tải lại sau mỗi 5 giây
+    setInterval(fetchLogs, 5000);
+</script>
+
+</body>
+</html>

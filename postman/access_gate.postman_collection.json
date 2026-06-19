@@ -1,0 +1,284 @@
+{
+  "info": {
+    "_postman_id": "access-gate-b3-collection",
+    "name": "Access Gate B3 - Product B",
+    "description": "Ki\u1ec3m th\u1eed t\u00edch h\u1ee3p Access Gate Service (FIT4110 - Nh\u00f3m B3)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "DVKN2026-SECRET-KEY"
+          }
+        ],
+        "url": "{{base_url}}/health"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+              "pm.test('Service name', function () {",
+              "  var json = pm.response.json();",
+              "  pm.expect(json.service).to.eql('access-gate-b3');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Access Check - Valid Student IN",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-API-Key",
+            "value": "DVKN2026-SECRET-KEY"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"card_id\": \"{{valid_card_id}}\",\n  \"gate_id\": \"gate-main\",\n  \"direction\": \"IN\",\n  \"timestamp\": \"2026-05-02T07:30:00\"\n}"
+        },
+        "url": "{{base_url}}/api/v1/access/check"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+              "pm.test('Access granted', function () {",
+              "  var json = pm.response.json();",
+              "  pm.expect(json.access_granted).to.eql(true);",
+              "  pm.expect(json.person_id).to.eql('SV001');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Access Check - Expired Card",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-API-Key",
+            "value": "DVKN2026-SECRET-KEY"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"card_id\": \"{{expired_card_id}}\",\n  \"gate_id\": \"gate-main\",\n  \"direction\": \"IN\",\n  \"timestamp\": \"2026-05-02T07:30:00\"\n}"
+        },
+        "url": "{{base_url}}/api/v1/access/check"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+              "pm.test('Access denied', function () {",
+              "  var json = pm.response.json();",
+              "  pm.expect(json.access_granted).to.eql(false);",
+              "  pm.expect(json.reason).to.include('expired');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Access Check - Unknown Card",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-API-Key",
+            "value": "DVKN2026-SECRET-KEY"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"card_id\": \"RFID-UNKNOWN\",\n  \"gate_id\": \"gate-main\",\n  \"direction\": \"IN\",\n  \"timestamp\": \"2026-05-02T07:30:00\"\n}"
+        },
+        "url": "{{base_url}}/api/v1/access/check"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Access denied unknown', function () {",
+              "  var json = pm.response.json();",
+              "  pm.expect(json.access_granted).to.eql(false);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Access Check - Invalid Direction",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-API-Key",
+            "value": "DVKN2026-SECRET-KEY"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"card_id\": \"{{valid_card_id}}\",\n  \"gate_id\": \"gate-main\",\n  \"direction\": \"INVALID\",\n  \"timestamp\": \"2026-05-02T07:30:00\"\n}"
+        },
+        "url": "{{base_url}}/api/v1/access/check"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 400', function () { pm.response.to.have.status(400); });"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Get Access Logs",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "DVKN2026-SECRET-KEY"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/v1/access/logs?page=1&limit=10",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "access",
+            "logs"
+          ],
+          "query": [
+            {
+              "key": "page",
+              "value": "1"
+            },
+            {
+              "key": "limit",
+              "value": "10"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+              "pm.test('Has items array', function () {",
+              "  var json = pm.response.json();",
+              "  pm.expect(json.items).to.be.an('array');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Get Card By ID",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "DVKN2026-SECRET-KEY"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/cards/{{valid_card_id}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+              "pm.test('Card found', function () {",
+              "  var json = pm.response.json();",
+              "  pm.expect(json.card_id).to.eql(pm.environment.get('valid_card_id'));",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Access Check - Missing Auth",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\\n  \"card_id\": \"{{valid_card_id}}\",\\n  \"gate_id\": \"gate-main\",\\n  \"direction\": \"IN\",\\n  \"timestamp\": \"2026-05-02T07:30:00\"\\n}"
+        },
+        "url": "{{base_url}}/api/v1/access/check"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status 401 Unauthorized\", function () { pm.response.to.have.status(401); });"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    }
+  ]
+}
