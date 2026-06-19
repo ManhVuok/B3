@@ -1,5 +1,7 @@
+import csv
 import json
 import logging
+import os
 import ssl
 import threading
 from datetime import datetime, timezone
@@ -12,6 +14,24 @@ from src.schemas import AccessCheckRequest, RawRFIDEvent, ProcessedAccessEvent
 from src.services.access_service import check_access
 
 logger = logging.getLogger(__name__)
+
+def get_class_name(uid: str) -> str:
+    try:
+        csv_path = os.path.join(os.path.dirname(__file__), "..", "..", "data", "AccessGate_uid_whitelist.csv")
+        # In docker, data is at /app/data. In local it's ../../data if from src/integrations, actually just ../data from src
+        csv_path = os.path.join(os.path.dirname(__file__), "..", "data", "AccessGate_uid_whitelist.csv")
+        if not os.path.exists(csv_path):
+            # fallback for docker
+            csv_path = "/app/data/AccessGate_uid_whitelist.csv"
+            
+        with open(csv_path, "r", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                if row.get("uid") == uid:
+                    return row.get("class_name")
+    except Exception:
+        pass
+    return None
 
 def on_connect(client, userdata, flags, reason_code, properties=None):
     logger.info("MQTT Connected with result code %s", reason_code)
@@ -49,7 +69,7 @@ def on_message(client, userdata, message):
             uid=raw_event.uid,
             student_id=result.person_id,
             full_name=result.person_name,
-            # we don't have class_name in our model right now, we can skip or add logic later
+            class_name=get_class_name(raw_event.uid) if result.access_granted else None,
             door_id=raw_event.door_id,
             location=raw_event.location,
             direction=raw_event.direction,

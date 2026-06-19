@@ -144,7 +144,7 @@ class ProcessedAccessEvent(BaseModel):
     """Payload B3 gửi ngược lại HiveMQ."""
     event_id: str
     event_type: str = "access.swipe.processed"
-    source_service: str = "access-gate-b3"
+    source_service: str = "team-gate"
     timestamp: datetime
     raw_event_id: str
     uid: str
