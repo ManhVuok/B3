@@ -441,6 +441,7 @@
                     <tr>
                         <th>Thời gian</th>
                         <th>Mã Thẻ (UID)</th>
+                        <th>Chủ thẻ</th>
                         <th>Hướng đi</th>
                         <th>Khu vực cổng</th>
                         <th>Trạng thái</th>
@@ -449,7 +450,7 @@
                 </thead>
                 <tbody id="log-body">
                     <tr>
-                        <td colspan="6">
+                        <td colspan="7">
                             <div class="loader-container">
                                 <div class="loader"></div>
                                 <span style="color: var(--text-tertiary)">Đang tải dữ liệu từ máy chủ...</span>
@@ -516,7 +517,7 @@
             const tbody = document.getElementById('log-body');
             
             if (!data.items || data.items.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state">Chưa có bản ghi quẹt thẻ nào.</div></td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state">Chưa có bản ghi quẹt thẻ nào.</div></td></tr>';
                 return;
             }
 
@@ -539,10 +540,12 @@
                 
                 const directionText = translate(item.direction.toUpperCase());
                 const statusText = item.access_granted ? 'CẤP QUYỀN' : 'TỪ CHỐI';
+                const personName = item.person_name || '<span style="opacity:0.5; font-style:italic">Không xác định</span>';
                 
                 tr.innerHTML = `
                     <td>${formatTime(item.timestamp)}</td>
                     <td><span class="uid-text">${item.card_id}</span></td>
+                    <td style="font-weight: 600; color: var(--accent-primary)">${personName}</td>
                     <td><span class="tag ${item.direction.toLowerCase()}">${directionText}</span></td>
                     <td><span class="gate-text">${item.gate_id.toUpperCase()}</span></td>
                     <td><span class="tag ${item.access_granted ? 'granted' : 'denied'}">${statusText}</span></td>
