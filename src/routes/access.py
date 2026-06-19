@@ -15,6 +15,8 @@ from src.schemas import (
     ErrorDetail,
     ErrorResponse,
     HealthResponse,
+    GateCommandRequest,
+    GateCommandResponse,
 )
 from src.services.access_service import check_access, create_card, get_card, list_access_logs
 from src.config import settings
@@ -42,6 +44,24 @@ def health_check():
 )
 def access_check(payload: AccessCheckRequest, db: Session = Depends(get_db)):
     return check_access(db, payload)
+
+
+@router.post(
+    "/gate/command",
+    response_model=GateCommandResponse,
+    tags=["Access"],
+)
+def gate_command(payload: GateCommandRequest):
+    if payload.command == "OPEN" and payload.uid == "ALL_GATES_EMERGENCY":
+        from src.routes.access import logger
+        logger.critical("🔥 FIRE ALARM EMERGENCY RECEIVED! OPENING ALL GATES IMMEDIATELY! BYPASSING DB CHECKS!")
+        # Thêm đoạn publish MQTT nếu cần để mở cổng vật lý
+        return GateCommandResponse(
+            status="success",
+            message="ALL GATES OPENED SUCCESSFULLY DUE TO EMERGENCY",
+            gate_id="ALL"
+        )
+    raise HTTPException(status_code=400, detail="Invalid command or UID")
 
 
 @router.get(

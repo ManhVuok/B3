@@ -156,3 +156,13 @@ class ProcessedAccessEvent(BaseModel):
     direction: str
     access_result: Literal["granted", "denied"]
     reason: str
+
+
+class GateCommandRequest(BaseModel):
+    command: str
+    uid: str
+
+class GateCommandResponse(BaseModel):
+    status: str
+    message: str
+    gate_id: str = "ALL"
