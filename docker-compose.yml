@@ -8,8 +8,8 @@ services:
       - .env
     environment:
       DATABASE_URL: postgresql://access:access@db:5432/access_gate
-      CORE_BUSINESS_URL: http://26.76.38.192:8000
-      ANALYTICS_URL: http://26.21.187.230:8000
+      CORE_BUSINESS_URL: ${CORE_BUSINESS_URL}
+      ANALYTICS_URL: ${ANALYTICS_URL}
     depends_on:
       db:
         condition: service_healthy
