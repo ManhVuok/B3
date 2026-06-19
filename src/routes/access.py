@@ -51,11 +51,32 @@ def access_check(payload: AccessCheckRequest, db: Session = Depends(get_db)):
     response_model=GateCommandResponse,
     tags=["Access"],
 )
-def gate_command(payload: GateCommandRequest):
+def gate_command(payload: GateCommandRequest, db: Session = Depends(get_db)):
     if payload.command == "OPEN" and payload.uid == "ALL_GATES_EMERGENCY":
-        from src.routes.access import logger
+        import logging
+        from src.database import AccessLog
+        from src.services.access_service import generate_event_id
+        from datetime import datetime, timezone
+
+        logger = logging.getLogger(__name__)
         logger.critical("🔥 FIRE ALARM EMERGENCY RECEIVED! OPENING ALL GATES IMMEDIATELY! BYPASSING DB CHECKS!")
-        # Thêm đoạn publish MQTT nếu cần để mở cổng vật lý
+        
+        # Ghi log khẩn cấp vào database để hiện lên Web Dashboard
+        log = AccessLog(
+            event_id=generate_event_id(),
+            card_id="ALL_GATES_EMERGENCY",
+            person_name="🚨 LỆNH BÁO CHÁY",
+            person_type="system",
+            gate_id="ALL",
+            direction="IN", 
+            access_granted=True,
+            reason="Mở toàn bộ cửa thoát hiểm!",
+            timestamp=datetime.now(timezone.utc),
+            created_at=datetime.now(timezone.utc),
+        )
+        db.add(log)
+        db.commit()
+
         return GateCommandResponse(
             status="success",
             message="ALL GATES OPENED SUCCESSFULLY DUE TO EMERGENCY",
